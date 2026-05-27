@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor - Lector de Placas</title>
+    <!-- Fuente moderna (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Extractor de Placas</h1>
+            <p>Extrae MLFB y Códigos Z automáticamente desde imágenes</p>
+        </header>
+
+        <main>
+            <section class="project-config">
+                <div class="input-group">
+                    <label for="projectName">Nombre del Proyecto:</label>
+                    <input type="text" id="projectName" placeholder="Ej: Proyecto_Norte_2024" value="Inventario">
+                </div>
+            </section>
+
+            <section class="upload-section">
+                <div id="dropZone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>Arrastra y suelta fotos de placas aquí</p>
+                        <span class="or-text">o</span>
+                        <label for="fileInput" class="btn btn-primary">Seleccionar Imágenes</label>
+                        <input type="file" id="fileInput" multiple accept="image/*" class="hidden-input">
+                    </div>
+                </div>
+            </section>
+
+            <section class="results-section">
+                <div class="results-header">
+                    <h2>Resultados de Extracción</h2>
+                    <button id="exportExcelBtn" class="btn btn-secondary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                        Exportar a Excel
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Imagen</th>
+                                <th>Estado</th>
+                                <th>MLFB (Nº Parte)</th>
+                                <th>Código Z</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <!-- Los resultados se agregarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Tesseract.js (OCR) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Lógica de la aplicación -->
+    <script src="main.js"></script>
+</body>
+</html>
