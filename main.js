@@ -98,38 +98,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function extractDataFromText(text) {
-        // Regex para MLFB (Ej. 1LA7070-4AB10-Z o similar)
-        // Busca patrones que parezcan números de parte industriales (ej Siemens)
-        // Ejemplo: 7 o más caracteres alfanuméricos separados por guiones
-        const mlfbRegex = /[A-Z0-9]{4,7}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}/g;
+        // Regex para MLFB (Ej. 6SL3720-1TG34-1AA3-Z)
+        // Busca secuencias alfanuméricas separadas por guiones, frecuentemente precedidas por '1P' en Siemens
+        const mlfbRegex = /\b[A-Z0-9]{4,7}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}(?:-[A-Z0-9]+)?\b/gi;
         
-        // Regex para Códigos Z
-        // Busca una "Z" o "Z:" seguida de algo que parezca un código
-        const zCodeRegex = /Z[\s:]+([A-Z0-9\+\-]+)/gi;
+        // Regex para Códigos Z (Ej. D99+M21+M70+M84+M91+Q82+Y11+Y33)
+        // Busca secuencias de códigos cortos separados por signos '+'
+        const zCodeRegexPlus = /\b[A-Z0-9]{2,4}(?:\+[A-Z0-9]{2,4})+\b/gi;
+        // Fallback original para Z codes si se usa el formato Z:
+        const zCodeRegexPrefix = /Z[\s:]+([A-Z0-9\+\-]+)/gi;
 
-        const mlfbMatches = text.match(mlfbRegex) || [];
-        // limpiar duplicados
+        let mlfbMatches = text.match(mlfbRegex) || [];
+        // Limpiar duplicados y vacíos
+        mlfbMatches = mlfbMatches.map(m => m.trim());
         const uniqueMlfb = [...new Set(mlfbMatches)].join(', ');
 
         let zCodes = [];
+        
+        // Extraer formato D99+M21...
+        const plusMatches = text.match(zCodeRegexPlus);
+        if (plusMatches) {
+            plusMatches.forEach(match => zCodes.push(match.trim()));
+        }
+
+        // Extraer formato Z: ...
         let match;
-        while ((match = zCodeRegex.exec(text)) !== null) {
+        while ((match = zCodeRegexPrefix.exec(text)) !== null) {
             if (match[1] && match[1].trim().length > 1) {
                 zCodes.push(match[1].trim());
             }
         }
+        
         const uniqueZCodes = [...new Set(zCodes)].join(', ');
 
-        // Fallback genérico si no se encuentra el MLFB estricto
-        // Busca cualquier cosa que parezca un número largo con guiones si no hay match
-        let finalMlfb = uniqueMlfb;
-        if (!finalMlfb) {
-           const fallbackMlfb = text.match(/\b[A-Z0-9]{3,}-[A-Z0-9]{3,}(-[A-Z0-9]{2,})?\b/g);
-           if(fallbackMlfb) finalMlfb = [...new Set(fallbackMlfb)].join(', ');
-        }
-
         return {
-            mlfb: finalMlfb || 'No detectado',
+            mlfb: uniqueMlfb || 'No detectado',
             zCode: uniqueZCodes || 'No detectado'
         };
     }
