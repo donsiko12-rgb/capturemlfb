@@ -99,18 +99,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function extractDataFromText(text) {
         // Regex para MLFB (Ej. 6SL3720-1TG34-1AA3-Z)
-        // Busca secuencias alfanuméricas separadas por guiones, frecuentemente precedidas por '1P' en Siemens
-        const mlfbRegex = /\b[A-Z0-9]{4,7}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}(?:-[A-Z0-9]+)?\b/gi;
+        // El OCR puede agregar espacios erróneos alrededor de los guiones, o confundir O con 0.
+        // Hacemos el regex más tolerante: sin word boundaries estrictos, y permitiendo espacios.
+        const mlfbRegex = /[a-zA-Z0-9]{4,7}\s*-\s*[a-zA-Z0-9]{4,5}\s*-\s*[a-zA-Z0-9]{4,5}(?:\s*-\s*[a-zA-Z0-9]+)?/gi;
         
-        // Regex para Códigos Z (Ej. D99+M21+M70+M84+M91+Q82+Y11+Y33)
-        // Busca secuencias de códigos cortos separados por signos '+'
-        const zCodeRegexPlus = /\b[A-Z0-9]{2,4}(?:\+[A-Z0-9]{2,4})+\b/gi;
-        // Fallback original para Z codes si se usa el formato Z:
-        const zCodeRegexPrefix = /Z[\s:]+([A-Z0-9\+\-]+)/gi;
+        // Regex para Códigos Z con formato D99+M21...
+        // Exigimos al menos DOS signos '+' para asegurar que es la cadena de opciones y no un falso positivo.
+        const zCodeRegexPlus = /[a-zA-Z0-9]{2,4}(?:\s*\+\s*[a-zA-Z0-9]{2,4}){2,}/gi;
+        
+        // Regex para Códigos Z con prefijo (Ej. Z: A11). Lo hacemos más estricto para evitar falsos positivos
+        const zCodeRegexPrefix = /(?:Código Z|Z-Code|Z\s*:)\s*([a-zA-Z0-9\+\-\s]+)/gi;
 
         let mlfbMatches = text.match(mlfbRegex) || [];
-        // Limpiar duplicados y vacíos
-        mlfbMatches = mlfbMatches.map(m => m.trim());
+        // Limpiar duplicados y formatear (quitar espacios extra alrededor de guiones si los hay)
+        mlfbMatches = mlfbMatches.map(m => m.replace(/\s+-\s+/g, '-').trim().toUpperCase());
         const uniqueMlfb = [...new Set(mlfbMatches)].join(', ');
 
         let zCodes = [];
@@ -118,14 +120,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Extraer formato D99+M21...
         const plusMatches = text.match(zCodeRegexPlus);
         if (plusMatches) {
-            plusMatches.forEach(match => zCodes.push(match.trim()));
+            plusMatches.forEach(match => {
+                // Limpiar espacios alrededor de los +
+                zCodes.push(match.replace(/\s+\+\s+/g, '+').trim().toUpperCase());
+            });
         }
 
         // Extraer formato Z: ...
         let match;
         while ((match = zCodeRegexPrefix.exec(text)) !== null) {
             if (match[1] && match[1].trim().length > 1) {
-                zCodes.push(match[1].trim());
+                zCodes.push(match[1].trim().toUpperCase());
             }
         }
         
