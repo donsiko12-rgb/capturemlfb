@@ -1,0 +1,6 @@
+{
+  "name": "Siemens MLFB & Z-Code Extractor",
+  "description": "Extraiga de forma precisa números de parte (MLFB) y códigos Z de placas de características Siemens mediante OCR multimodal y genere reportes automáticos en Excel.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
