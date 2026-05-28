@@ -94,13 +94,40 @@ export default function App() {
   // Save states back to local storage whenever they change
   useEffect(() => {
     if (projects.length > 0) {
-      localStorage.setItem('siemens_ocr_projects', JSON.stringify(projects));
+      try {
+        localStorage.setItem('siemens_ocr_projects', JSON.stringify(projects));
+      } catch (e) {
+        console.error("Error saving projects to localStorage:", e);
+      }
     }
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem('siemens_ocr_results', JSON.stringify(results));
-  }, [results]);
+    try {
+      localStorage.setItem('siemens_ocr_results', JSON.stringify(results));
+    } catch (error) {
+      console.warn("Storage quota exceeded, attempting self-healing cleanup of old image data to prevent crash:", error);
+      try {
+        // Keep active image and strip massive base64 image strings from older completed records to fit database quota
+        const optimizedResults = results.map((r) => {
+          if (r.id === selectedResultId) {
+            return r;
+          }
+          if (r.status === 'completed' && r.imageUrl && r.imageUrl.startsWith('data:')) {
+            return {
+              ...r,
+              imageUrl: '', // Strip the massive base64 payload to fit standard 5MB browser quota
+              imageStripped: true
+            };
+          }
+          return r;
+        });
+        localStorage.setItem('siemens_ocr_results', JSON.stringify(optimizedResults));
+      } catch (innerError) {
+        console.error("Critical: Storage quota completely filled even with optimized rows.", innerError);
+      }
+    }
+  }, [results, selectedResultId]);
 
   // --- WORKSPACE OPERATIONS ---
   const handleAddProject = (e: React.FormEvent) => {
@@ -557,7 +584,7 @@ export default function App() {
             <ImageUploader onImagesSelected={handleImagesSelected} />
 
             {/* Simulated hardware plate vectors (perfect to instantly audit values) */}
-            <SiemensTemplateGenerator onTemplateGenerated={handleImagesSelected} />
+            <SiemensTemplateGenerator onTemplateGenerated={(name, base64) => handleImagesSelected([{ fileName: name, base64 }])} />
 
             {/* Quick list list of items inside the queue */}
             <div className="space-y-2 shrink-0 pt-2 border-t border-slate-200">
